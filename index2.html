@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>Medical Record</title>
+    <script language="javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script language="javascript" type="text/javascript" src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script language="javascript" type="text/javascript" src="appointment_abi.js"></script>
+  </head>
+  <body>
+    <div id="personalData"></div>
+
+    <script>
+      var medicalRecord;
+      var userAccount;
+
+
+      window.addEventListener('load', function() {
+        // Checking if Web3 has been injected by the browser (Mist/MetaMask)
+        if (typeof web3 !== 'undefined') {
+          // Use Mist/MetaMask's provider
+          web3js = new Web3(web3.currentProvider);
+        }
+        else {
+          // Handle the case where the user doesn't have Metamask
+          // Probably show them a message prompting them to install Metamask
+        }
+        // Now you can start your app & access web3 freely:
+        startApp()
+      })
+
+      function startApp() {
+        var medicalRecordAddress = "0x934aa1e33987010ba994faedf973ec0da25de395";
+        medicalRecord = new web3js.eth.Contract(medicalRecordAbi, medicalrecordAddress);
+
+        var accountInterval = setInterval(function() {
+            // Check if account has changed
+            if (web3.eth.accounts[0] !== userAccount) {
+              userAccount = web3.eth.accounts[0];
+              // Call a function to update the UI with the new account
+              switch(getUserRole()) {
+                case 1:
+                  displayOwner();
+                  break;
+                case 2:
+                  displayMedic(userAccount);
+                  break;
+                case 3:
+                  displayPatient(userAccount);
+                default:
+                  newAccount();
+              }
+            }
+          }, 100);
+      }
+
+      function getUserRole() {
+        return medicalRecord.methods.getUserRole().call();
+      }
+
+      function displayOwner() {
+        $("#personalData").empty();
+        $("#personalData").append(`<div class="data"
+          <ul>
+            <li> Create new medic </li>
+          </ul>
+        </div>`);
+      }
+
+      function displayMedic(medicAddress) {
+        $("#personalData").empty();
+        getMedicData(medicAddress)
+        .then(function(medic) {
+          $("#personalData").append(`<div class="medic"
+            <ul>
+              <li>First Name: ${medic._firstName}</li>
+              <li>Last Name: ${medic._lastName}</li>
+              <li>Specialization: ${medic._specialization}</li>
+            </ul>
+          </div>`);
+        });
+      }
+
+      function displayPatient(patientAddress) {
+        getPatientData(patientAddress)
+        .then(function(patient) {
+          $("#personalData").append(`<div class="patient"
+            <ul>
+              <li>First Name: ${patient._firstName}</li>
+              <li>Last Name: ${patient._lastName}</li>
+            </ul>
+          </div>`);
+        });
+      }
+
+      function newAccount() {
+        $("#personalData").empty();
+        $("#personalData").append(`<div class="data"
+          <ul>
+            <li> Create new account </li>
+          </ul>
+        </div>`);
+      }
+
+      function getMedicDetails(medicAddress) {
+        return medicalRecord.methods.getMedicData(medicAddress).call();
+      }
+
+      function getPatientDetails(patientAddress) {
+        return medicalRecord.methods.getPatientData(patientAddress).call();
+      }
+    </script>
+  </body>
+</html>

@@ -1,6 +1,8 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.4.23;
 
-contract PatientData {
+import "./general_data.sol";
+
+contract PatientData is GeneralData {
 
   event newPatient(string firstName, string lastName);
 
@@ -17,16 +19,39 @@ contract PatientData {
   function createNewPatient(string _firstName, string _lastName) external {
       uint patientId = patients.push(Patient(_firstName, _lastName)) - 1;
       patientData[msg.sender] = patientId;
-      newPatient(_firstName, _lastName);
+      userRole[msg.sender] = 3;
+      emit newPatient(_firstName, _lastName);
   }
 
-  function getPatientData() external view returns (string _firstName, string _lastName) {
-      uint patientId = patientData[msg.sender];
+  function checkRightsOverPatinet(address _medicAddress, address _patientAddress) internal returns (bool) {
+    address[] memory medicAddresses = patientMedics[_patientAddress];
+    for(uint i = 0; i<medicAddresses.length; i++) {
+      if (medicAddresses[i] == _medicAddress){
+        return true;
+      }
+    }
+    return false;
+  }
+
+    function getPatientData(address _patientAddress) external view returns (string _firstName, string _lastName) {
+      uint patientId;
+      if(checkRightsOverPatinet(msg.sender, _patientAddress)) {
+         patientId = patientData[_patientAddress];
+      }
+      else{
+         patientId = patientData[msg.sender];
+      }
+
       Patient memory patient = patients[patientId];
       return (patient.firstName, patient.lastName);
+
   }
 
   function giveRights(address _medicAddress) public {
-      patientMedics[_medicAddress].push(msg.sender);
+      patientMedics[msg.sender].push(_medicAddress);
+  }
+
+  function getPatientMedics() view returns(address[]) {
+    return patientMedics[msg.sender];
   }
 }

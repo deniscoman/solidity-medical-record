@@ -4,15 +4,34 @@
     <meta charset="UTF-8">
     <title>Medical Record</title>
     <script language="javascript" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script language="javascript" type="text/javascript" src="https://cdn.jsdelivr.net/gh/ethereum/web3.js/dist/web3.min.js"></script>
+    <script language="javascript" type="text/javascript" src="web3.min.js"></script>
     <script language="javascript" type="text/javascript" src="appointment_abi.js"></script>
+    <script language="javascript" type="text/javascript" src="owner_functions.js"></script>
+    <script language="javascript" type="text/javascript" src="patient_functions.js"></script>
+    <script language="javascript" type="text/javascript" src="medic_functions.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="styles.css">    
+<!--    <link rel="stylesheet" href="/css/bootstrap.css"> -->
   </head>
   <body>
-    <div id="personalData"></div>
+    <div id="header">
+      <img id="logo" src="logo.png" alt="Logo">
+      <div id="navigation"></div>
+    </div>
+    <div id="separatorBarContainer">
+      <div id="separatorBar"></div>
+    </div>
+    <div id="container">
+      <div id="details"></div>
+      <div id="medic"></div>
+      <div id="medicalEntry"></div>
+      <div id="personalData"></div>
+    </div>
 
     <script>
       var medicalRecord;
       var userAccount;
+      var role;
 
 
       window.addEventListener('load', function() {
@@ -30,84 +49,41 @@
       })
 
       function startApp() {
-        var medicalRecordAddress = "0x934aa1e33987010ba994faedf973ec0da25de395";
-        medicalRecord = new web3js.eth.Contract(medicalRecordAbi, medicalrecordAddress);
+        var medicalRecordAddress = "0xFCAE389B3e49E8ea0DfD2C5B7E138f85dF9ec5C1";
+        medicalRecord = web3js.eth.contract(medicalRecordABI).at(medicalRecordAddress);
 
         var accountInterval = setInterval(function() {
-            // Check if account has changed
-            if (web3.eth.accounts[0] !== userAccount) {
-              userAccount = web3.eth.accounts[0];
-              // Call a function to update the UI with the new account
-              switch(getUserRole()) {
-                case 1:
-                  displayOwner();
-                  break;
-                case 2:
-                  displayMedic(userAccount);
-                  break;
-                case 3:
-                  displayPatient(userAccount);
-                default:
-                  newAccount();
-              }
-            }
-          }, 100);
+          // Check if account has changed
+          if(web3.eth.accounts[0] !== userAccount) {
+            userAccount = web3.eth.accounts[0];
+            // Call a function to update the UI with the new account
+            getUserRole();
+          }
+        }, 100);
       }
 
       function getUserRole() {
-        return medicalRecord.methods.getUserRole().call();
-      }
-
-      function displayOwner() {
-        $("#personalData").empty();
-        $("#personalData").append(`<div class="data"
-          <ul>
-            <li> Create new medic </li>
-          </ul>
-        </div>`);
-      }
-
-      function displayMedic(medicAddress) {
-        $("#personalData").empty();
-        getMedicData(medicAddress)
-        .then(function(medic) {
-          $("#personalData").append(`<div class="medic"
-            <ul>
-              <li>First Name: ${medic._firstName}</li>
-              <li>Last Name: ${medic._lastName}</li>
-              <li>Specialization: ${medic._specialization}</li>
-            </ul>
-          </div>`);
+        return medicalRecord.getUserRole(function(error, result){
+          if(!error) {
+            console.log(result.c[0]);
+           switch(result.c[0]) {
+            case 1:
+              displayOwner();
+              break;
+            case 2:
+              displayMedic(userAccount);
+              break;
+            case 3:
+              displayPatient(userAccount);
+              break;
+            default:
+              newAccount();
+              break;
+            }
+          }    
+          else
+            console.error(error); 
         });
-      }
-
-      function displayPatient(patientAddress) {
-        getPatientData(patientAddress)
-        .then(function(patient) {
-          $("#personalData").append(`<div class="patient"
-            <ul>
-              <li>First Name: ${patient._firstName}</li>
-              <li>Last Name: ${patient._lastName}</li>
-            </ul>
-          </div>`);
-        });
-      }
-
-      function newAccount() {
-        $("#personalData").empty();
-        $("#personalData").append(`<div class="data"
-          <ul>
-            <li> Create new account </li>
-          </ul>
-        </div>`);
-      }
-
-      function getMedicDetails(medicAddress) {
-        return medicalRecord.methods.getMedicData(medicAddress).call();
-      }
-
-      function getPatientDetails(patientAddress) {
-        return medicalRecord.methods.getPatientData(patientAddress).call();
       }
     </script>
   </body>
